@@ -1,0 +1,8 @@
+{
+  "name": "chessOnline",
+  "version": "0.0.1",
+  "description": "chess",
+  "dependencies": {
+    "socket.io": "^1.0.6"
+  }
+}
