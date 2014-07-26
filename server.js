@@ -80,6 +80,7 @@ socket.on('subscribe', function(roomId) {
       } else {
         room.join(socket.id);
         socket.join(roomId);
+        socket.emit("stato", "approvato");
       }
     }
 
