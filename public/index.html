@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000;  position: fixed; bottom: 0; width: 30%; border: 1px solid #ccc;}
+      form input { border: 0; padding: 10px; width: 90%;  }
+      form button { width: 10%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      .content{
+      min-height:100%;
+      width:100%;
+      min-width:640px;
+      }
+      
+     .dx{ width:30%;
+     	  float:left;	
+     	  display:block;
+     	  border:1px solid #ccc;
+     	  height:100vh;
+     	
+     }
+     .sx{ width:70%;
+     	  float:left;	
+     	  display:block;
+     	  border:1px solid #ccc;
+     	  height:100vh;
+    
+     }
+     .board{
+width: 40%;
+left: auto;
+right: auto;
+position: relative;
+margin:0 auto;
+
+     }
+    </style>
+    
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>   
+<script  src="/vendor/js/chess.js"></script>
+<script src="/vendor/js/chessboard-0.3.0.js"></script>
+	
+<link rel="stylesheet" href="/vendor/css/chessboard-0.3.0.css" />
+
+
+</head>
+<body>
+<div class="content">
+	
+	
+<div class="sx">
+  			<div style="display:none" id="board" class="board"> </div>	
+  	
+			  <div id="gestione">
+			  
+			      <button id="creazione" onclick="crea()">Crea Partita</button>
+			    
+			     <ul id="stanze"> </ul>
+			  </div> 
+			 </div>
+</div>
+  	
+  
+  
+  	
+ <div style="display:none" id="dx" class="dx">
+  	
+  <input id="user" type="text"  placeholder="Username"/>
+  
+    <ul id="messages"> </ul>
+    
+    <form id="chat" action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    
+  </div> 
+  
+  
+ </div>	
+  <!-- Fine body/inizio script -->
+<script  src="main.js"></script>  
+  </body>
+</html>
