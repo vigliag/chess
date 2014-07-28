@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>Socket.IO Chess</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
@@ -41,12 +41,12 @@ margin:0 auto;
      }
     </style>
     
-<script src="/socket.io/socket.io.js"></script>
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.1.js"></script>   
-<script  src="/vendor/js/chess.js"></script>
-<script src="/vendor/js/chessboard-0.3.0.js"></script>
+<script  src="vendor/js/chess.js"></script>
+<script src="vendor/js/chessboard-0.3.0.js"></script>
 	
-<link rel="stylesheet" href="/vendor/css/chessboard-0.3.0.css" />
+<link rel="stylesheet" href="vendor/css/chessboard-0.3.0.css" />
 
 
 </head>
@@ -59,6 +59,12 @@ margin:0 auto;
   	
 			  <div id="gestione">
 			  
+
+<input type="text" id="entra" placeholder="ID">
+<button  onclick="join()">Entra</button>
+
+<br>
+<br>
 			      <button id="creazione" onclick="crea()">Crea Partita</button>
 			    
 			     <ul id="stanze"> </ul>

@@ -9,7 +9,7 @@
     $('#m').val('');
     return false;
   });
-  var myid;
+  var myid=localStorage.getItem('ID');
  var myusers;
  var color;
  var mystato;
@@ -32,7 +32,13 @@
   
  
   socket.on('id', function(id){
+  	 if(!myid) {
        myid=id;
+       localStorage.setItem('ID',id);
+      }else{
+      socket.emit("settaid",myid);	
+      	
+      }
   });
   
    socket.on('stato', function(stato){
@@ -85,6 +91,13 @@ function crea(){
 }
 
 function entra(room){
+socket.emit("subscribe",room);  
+wait(room);
+}
+
+
+function join(){
+room=document.getElementById("entra").value;
 socket.emit("subscribe",room);  
 wait(room);
 }
@@ -200,3 +213,27 @@ var cfg = {
 board = new ChessBoard('board', cfg);
 
 updateStatus();
+
+
+function joina(){
+IDsess=document.getElementById("joina").val();
+window.location.href="/"+IDsess;	
+	
+}
+
+$( document ).ready(function() {
+var par = getUrlVars()["ID"];
+if (par){
+entra(par);
+}
+});
+
+
+function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+}
+

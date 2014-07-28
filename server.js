@@ -24,15 +24,19 @@ function Room(){
   } 
 }
 
+var nick= new Array();
+
+
 Room.prototype.isFull = function() {
   return this.users.ID2 !== null;
+  
 };
 
 Room.prototype.join = function(socketId) {
   if(this.users.ID1 === null)
-    return this.users.ID1 = socketId; //è bianco 
+    return this.users.ID1 = nick[socketId]; //è bianco 
   if(this.users.ID2 === null)
-    return this.users.ID2 = socketId;
+    return this.users.ID2 = nick[socketId];
   throw new Error('room Full');
 }
 
@@ -46,7 +50,10 @@ function availableRooms(){
 
 io.sockets.on('connection', function(socket){
 
-socket.emit('id', socket.id);
+nick[socket.id]=socket.id; //assegno un nick che è l'id
+
+socket.emit('id', socket.id); //mando l'id ma se è gia esistente il client torna id vecchio
+
 console.log(socket.id);	
 
   socket.on('create', function() { 
@@ -60,6 +67,12 @@ console.log(socket.id);
 	socket.emit('room',roomId); 
 	socket.broadcast.emit('stanze', availableRooms());//dico a tutti le stanze
 });
+
+  socket.on('settaid', function(myid) { 
+	nick[socket.id]=myid;
+	console.log(nick[socket.id]+"="+myid);
+});
+
     
 socket.on('lista',function(){
     socket.emit('stanze', availableRooms());//dico le stanze a chi le ha chieste
@@ -69,6 +82,10 @@ socket.on('refresh',function(roomId){
   socket.broadcast.to(roomId).emit('users', rooms[roomId].users, roomId);
 });
   
+  
+  socket.on('disconnect', function() {
+    //user[id]=null; AGGIUSTA TU
+   }); 
   
 socket.on('subscribe', function(roomId) { 
     var room = rooms[roomId]
