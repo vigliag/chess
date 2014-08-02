@@ -1,6 +1,8 @@
 var sessione;
 var dati = new Array();
-var socket = io.connect("http://localhost:3000/", {'connect timeout': 400});
+//NOTE: roomId is global
+var roomId = 123;
+var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect timeout': 400});
 $('#chat').on('submit', function () {
     dati[0] = $('#user').val();
     dati[1] = $('#m').val();

@@ -14,26 +14,10 @@ app.get('/chess/:id', function (req, res) {
     res.render('room', {roomid: id, room: room, white: true});
 })
 
-
-var server = http.createServer(app).listen(3000);
-console.log("listening on port 3000");
-var io = require('socket.io')(server);
-
-io.on('connection', function (socket) {
-
-    socket.on('chatmessage', function (msg, room) {
-        socket.broadcast.to(room).emit('chatmessage', msg);
-    });
-
-    socket.on('fen', function (msg) {
-        io.emit('fen', msg);
-    });
-});
-
 // Room class
 function Room() {
     this.users = {
-        white: null, //{cookie:null, socketId: null},
+        white: null, //{secret:null, socketId: null},
         black: null
     }
 }
@@ -46,14 +30,47 @@ Room.prototype.isFull = function () {
     return this.users.ID2 !== null || this.users.ID1 !== null;
 };
 
-Room.prototype.register = function (color, socketId) {
+Room.prototype.register = function (color, socketId, secret) {
     if (this.users[color] === null){
         this.users[color] = {
-            cookie : 123,
-            socketId : socketId
+            secret : 123,
+            socketId : socketId,
+            connected : true
         }
         return this.users[color];
+    } else {
+        var user = this.users[color];
+        if(secret && user.secret == secret){
+            user.connected = true;
+            return user;
+        } else {
+            return false;
+        }
+        
     }
+}
+
+Room.prototype.setDisconnected = function(socketId){
+    for(var color in this.users){
+        if(this.users[color].socketId = socketId){
+            this.users[color].connected = false;
+            return true;
+        }
+    }
+    return false;
+}
+
+//returns an object with {color: connected}
+Room.prototype.userStatuses = function(){
+  var response = {}
+  for(var color in this.users){
+    if(!this.users[color]){
+      response[color] = null;
+    } else {
+      response[color] = !this.users[color].connected;
+    }
+  }
+  return response;
 }
 
 var rooms = {};
@@ -64,47 +81,60 @@ function availableRooms() {
     })
 }
 
-io.sockets.on('connection', function (socket) {
+var server = http.createServer(app).listen(3000);
+console.log("listening on port 3000");
+var io = require('socket.io')(server);
 
-    nick[socket.id] = socket.id; //assegno un nick che è l'id
+io.on('connection', function (socket) {
+    console.log(socket.request.url);
+    var urlMatches = /\gameRoom=(\w+)/.exec(socket.request.url);
 
-    socket.emit('id', socket.id); //mando l'id ma se è gia esistente il client torna id vecchio
+    if(!urlMatches){
+      console.log("unspecified room");
+      socket.emit('error', 'unspecified room');
+      return;
+    }
 
-    console.log(socket.id);
+    var gameRoomId = urlMatches[1];
+    socket.join(gameRoomId);
+    console.log('socket connected to room: ' + gameRoomId);
 
-    socket.on('create', function () {
-        var roomId = Math.floor((Math.random() * 1000) + 1);
-        if (rooms[roomId]) return socket.to(socket.id).emit('room', "errore");
+    var room = rooms[gameRoomId];
+    if(!room){
+      console.log("room doesn't exist");
+      io.to(socket.id).emit('error', "room doesn't exist");
+      return;
+    }
 
-        rooms[roomId] = new Room();
+    var roomio = socket.to(gameRoomId);
 
-        console.log(rooms);
-        //socket.join(newroom);
-        socket.emit('room', roomId);
-        socket.broadcast.emit('stanze', availableRooms());//dico a tutti le stanze
+    socket.on('chatmessage', function (msg) {
+        roomio.emit('chatmessage', msg);
     });
 
-    socket.on('settaid', function (myid) {
-        nick[socket.id] = myid;
-        console.log(nick[socket.id] + "=" + myid);
-    });
-
-    socket.on('disconnect', function () {
-        //user[id]=null; AGGIUSTA TU
-    });
-
-    socket.on('subscribe', function (roomId, color) {
-        var room = rooms[roomId];
-        if (!room) { //se la stanza non esiste
-            return socket.to(socket.id).emit("stato", "errore");
+    socket.on('fen', function (msg) {
+        if(socket.id == room.users.white || socket.id == room.users.white ){
+          roomio.emit('fen', msg);
+        } else{
+          socket.to(socket.id).emit('error', 'not a registered player')
         }
+    });
 
-        if(rooms.users[color])
+    socket.on('disconnect', function() {
+        room.setDisconnected(socket.id);
+        console.log('user disconnected');
+        socket.to(gameRoomId).emit('users', room.userStatuses());
+    });
+
+    socket.on('registerAs', function (color, secret) {
+        if(room.users[color])
             return socket.to(socket.id).emit("stato", "errore");
 
-        var user = rooms.register(color, socket.id);
-        socket.join(roomId);
-        socket.emit("approved", {color: color});
-        socket.broadcast.to(roomId).emit('users', {white: room.users.white, black: room.users.black});
+        var user = room.register(color, socket.id, secret);
+        if(!user){
+          return socket.to(socket.id).emit("stato", "errore");
+        }
+        socket.to(socket.id).emit("approved", {color:color, room: gameRoomId, secret: user.secret});
+        socket.broadcast.to(gameRoomId).emit('users', room.userStatuses());
     });//socket subscribe
 });//io connection
