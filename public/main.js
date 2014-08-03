@@ -83,7 +83,7 @@ var players= {};
 
 
 socket.on('users', function (status) {
-   console.log("stato:"+status);
+   console.log("stato:", status);
 });
 
 
@@ -109,19 +109,19 @@ socket.on('fen', function (fen) {
 });
 
 socket.on('users', function (users, room) {
+    console.log('users', users);
     console.log("starts");
     myusers = users;
-    if (users["ID1"] == myid) {
+    /*
+    if (users['white'] == myid) {
         board.orientation('white');
         color = "white";
         socket.emit("refresh", room);
-
-    } else {
+    } else if(users['black'] == myid) {
         board.orientation('black');
         color = "black";
     }
-
-
+    */
 });
 
 
@@ -135,16 +135,15 @@ socket.on('users', function (users, room) {
  */
 
 function registra(color) {
-
     socket.emit("registerAs", color, 123);
 }
 
 
-socket.on('approved', function (color, room, secret) {
-    console.log("Approved");
-    color = color;
+socket.on('approved', function (msg) {
+    console.log("Approved:", msg);
+    color = msg.color;
 
-    if (color == white) {
+    if (color == 'white') {
         board.orientation('white');
     } else {
         board.orientation('black');
