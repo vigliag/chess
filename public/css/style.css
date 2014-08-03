@@ -5,3 +5,11 @@ body {
     padding: 40px 15px;
     text-align: center;
 }
+.board{
+    left: auto;
+    right: auto;
+    position: relative;
+    margin:0 auto;
+    width:500px;
+
+}

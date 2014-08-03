@@ -2,54 +2,95 @@ var sessione;
 var dati = new Array();
 //NOTE: roomId is global
 var roomId = 123;
-var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect timeout': 400});
-$('#chat').on('submit', function () {
-    dati[0] = $('#user').val();
-    dati[1] = $('#m').val();
-    socket.emit('chatmessage', dati, sessione);
-    $('#m').val('');
-    return false;
-});
-var myid = localStorage.getItem('ID');
-var myusers;
-var color;
+var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect timeout': 400});//nn ho capito questa parte
 var mystato;
+var color;
+var players= {};
+/*
+ $('#chat').on('submit', function () {
 
-socket.on('connect', function () {
-    socket.emit("lista");
+ dati[0] = $('#user').val();
+ dati[1] = $('#m').val();
+ socket.emit('chatmessage', dati, sessione);
+ $('#m').val('');
+ return false;
+ });
+ var myid = localStorage.getItem('ID');
+ var myusers;
 
+
+
+ socket.on('connect', function () {
+ socket.emit("lista");
+
+ });
+
+
+ socket.on('stanze', function (stanzelist) {
+ var string = "";
+ for (i = 0; i < stanzelist.length; i++) {
+ string += "<li>" + stanzelist[i] + "</li><button onclick='entra(" + stanzelist[i] + ")'>Entra</button>";
+
+ }
+ $("#stanze").html(string).trigger('create');
+
+ });
+
+
+ socket.on('id', function (id) {
+ if (!myid) {
+ myid = id;
+ localStorage.setItem('ID', id);
+ } else {
+ socket.emit("settaid", myid);
+
+ }
+ });
+
+ socket.on('chatmessage', function (msg) {
+ $('#messages').append('<li><h3>' + msg[0] + ':</h3>' + msg[1] + '</li>');
+ });
+
+ function crea() {
+
+ socket.emit("create");
+ document.getElementById("creazione").style.display = "none";
+ }
+
+ function entra(room) {
+ socket.emit("subscribe", room);
+ wait(room);
+ }
+
+ function join() {
+ room = document.getElementById("entra").value;
+ socket.emit("subscribe", room);
+ wait(room);
+ }
+
+ function continua(room) {
+ if (mystato != "errore") {
+ sessione = room;
+ document.getElementById("gestione").style.display = "none";
+ document.getElementById("board").style.display = "block";
+ document.getElementById("dx").style.display = "block";
+ }
+ }
+
+
+ */
+
+
+
+socket.on('users', function (status) {
+   console.log("stato:"+status);
 });
 
-
-socket.on('stanze', function (stanzelist) {
-    var string = "";
-    for (i = 0; i < stanzelist.length; i++) {
-        string += "<li>" + stanzelist[i] + "</li><button onclick='entra(" + stanzelist[i] + ")'>Entra</button>";
-
-    }
-    $("#stanze").html(string).trigger('create');
-
-});
-
-
-socket.on('id', function (id) {
-    if (!myid) {
-        myid = id;
-        localStorage.setItem('ID', id);
-    } else {
-        socket.emit("settaid", myid);
-
-    }
-});
 
 socket.on('stato', function (stato) {
     mystato = stato;
 });
 
-
-socket.on('chatmessage', function (msg) {
-    $('#messages').append('<li><h3>' + msg[0] + ':</h3>' + msg[1] + '</li>');
-});
 
 socket.on('room', function (room) {
     socket.emit("lista");
@@ -84,47 +125,39 @@ socket.on('users', function (users, room) {
 });
 
 
-function crea() {
+/*********Nuove Funzioni************/
 
-    socket.emit("create");
-    document.getElementById("creazione").style.display = "none";
+/*STEP:
+ 1) va sulla pagina
+ 2) clicca su w/b e si "registra"
+ 3)socket manda approvazione
+ 4)on approved gira la scacchiera
+ */
+
+function registra(color) {
+
+    socket.emit("registerAs", color, 123);
 }
 
-function entra(room) {
-    socket.emit("subscribe", room);
-    wait(room);
-}
 
+socket.on('approved', function (color, room, secret) {
+    console.log("Approved");
+    color = color;
 
-function join() {
-    room = document.getElementById("entra").value;
-    socket.emit("subscribe", room);
-    wait(room);
-}
-
-function continua(room) {
-    if (mystato != "errore") {
-        sessione = room;
-        document.getElementById("gestione").style.display = "none";
-        document.getElementById("board").style.display = "block";
-        document.getElementById("dx").style.display = "block";
+    if (color == white) {
+        board.orientation('white');
+    } else {
+        board.orientation('black');
     }
-}
 
 
-function wait(room) {
-    setTimeout(
-        function () {
-            if (mystato) {
-                continua(room);
-                return;
-            } else {
+});
 
-                wait();
-            }
 
-        }, 200);
-}
+/********************/
+
+
+
 var board,
     game = new Chess(),
     statusEl = $('#status'),
@@ -158,6 +191,7 @@ var onDrop = function (source, target) {
 // update the board position after the piece snap 
 // for castling, en passant, pawn promotion
 var onSnapEnd = function () {
+
 
     if ((game.turn() == "w" && color == "black") || (game.turn() == "b" && color == "white")) {
         cfg.draggable = false;
@@ -203,7 +237,7 @@ var updateStatus = function () {
 };
 
 var cfg = {
-    draggable: true,
+    draggable: false,
     position: 'start',
     onDragStart: onDragStart,
     onDrop: onDrop,
@@ -214,25 +248,5 @@ board = new ChessBoard('board', cfg);
 updateStatus();
 
 
-function joina() {
-    IDsess = document.getElementById("joina").val();
-    window.location.href = "/" + IDsess;
 
-}
-
-$(document).ready(function () {
-    var par = getUrlVars()["ID"];
-    if (par) {
-        entra(par);
-    }
-});
-
-
-function getUrlVars() {
-    var vars = {};
-    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
-        vars[key] = value;
-    });
-    return vars;
-}
 

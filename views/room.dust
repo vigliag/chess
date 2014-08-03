@@ -6,9 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="../../favicon.ico">
 
-    <title>Starter Template for Bootstrap</title>
+<!-- scripts-->
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/vendor/js/chess.js"></script>
+    <script src="/vendor/js/chessboard-0.3.0.js"></script>
+  <!-- scripts-->
+    <link rel="stylesheet" href="/vendor/css/chessboard-0.3.0.css" />
+
+    <title>G&G Chess</title>
 
     <!-- Bootstrap core CSS -->
     <link href="/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
@@ -47,10 +54,12 @@
 <div class="container">
 
     <div class="starter-template">
-        <h1>Chess  fsaf</h1>
-        <button type="button" id="enterWhite" class="btn btn-default" {?white}disabled="disabled"{/white}>Bianco</button>
-        <button type="button" id="enterBlack" class="btn btn-default" {?black}disabled="disabled"{/black}>Nero</button>
+        <h1>Chess</h1>
+        <button type="button" id="enterWhite" onClick="registra('white');" class="btn btn-default" {?white}disabled="disabled"{/white}>Bianco</button>
+        <button type="button" id="enterBlack" onClick="registra('black');" class="btn btn-default" {?black}disabled="disabled"{/black}>Nero</button>
     </div>
+
+    <div  id="board" class="board"> </div>
 
 </div>
 <!-- /.container -->
@@ -61,5 +70,6 @@
 <!-- Placed at the end of the document so the pages load faster -->
 <script src="/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/main.js"></script>
 </body>
 </html>

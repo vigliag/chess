@@ -11,7 +11,7 @@ app.use(express.static(__dirname + '/public'));
 app.get('/chess/:id', function (req, res) {
     var id = req.param("id");
     var room = rooms[id];
-    res.render('room', {roomid: id, room: room, white: true});
+    res.render('room', {roomid: id, room: room, white: false, black: false});
 })
 
 // Room class
@@ -23,7 +23,7 @@ function Room() {
 }
 
 
-var nick = new Array();
+
 
 
 Room.prototype.isFull = function () {
@@ -96,11 +96,13 @@ io.on('connection', function (socket) {
     }
 
     var gameRoomId = urlMatches[1];
+    console.log("gameRoomId:"+gameRoomId);
     socket.join(gameRoomId);
     console.log('socket connected to room: ' + gameRoomId);
 
     var room = rooms[gameRoomId];
     if(!room){
+      console.log(room);
       console.log("room doesn't exist");
       io.to(socket.id).emit('error', "room doesn't exist");
       return;
