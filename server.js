@@ -18,9 +18,9 @@ var rooms = {};
 app.get('/chess/:id', function (req, res) {
     var id = req.param("id");
     var room = rooms[id];
-    if(!room){
-      room = rooms[id] = new Room();
-      console.log('new room created with id ' + id);
+    if (!room) {
+        room = rooms[id] = new Room();
+        console.log('new room created with id ' + id);
     }
     res.render('room', {roomid: id, room: room, white: false, black: false});
 })
@@ -36,13 +36,13 @@ io.on('connection', function (socket) {
 
     //obtains the room for the request url
     var urlMatches = /gameRoom=(\w+)/.exec(socket.request.url);
-    if(!urlMatches){
-      console.log("unspecified room");
-      socket.emit('error', 'unspecified room');
-      return;
+    if (!urlMatches) {
+        console.log("unspecified room");
+        socket.emit('error', 'unspecified room');
+        return;
     }
     var gameRoomId = urlMatches[1];
-    console.log("gameRoomId:"+gameRoomId);
+    console.log("gameRoomId:" + gameRoomId);
 
     //joins the client into the room
     socket.join(gameRoomId);
@@ -50,10 +50,10 @@ io.on('connection', function (socket) {
 
     //grabs a reference to the room (it must already exist)
     var room = rooms[gameRoomId];
-    if(!room){
-      console.log("room doesn't exist");
-      //io.to(socket.id).emit('error', "room doesn't exist");
-      return;
+    if (!room) {
+        console.log("room doesn't exist");
+        //io.to(socket.id).emit('error', "room doesn't exist");
+        return;
     }
 
     //shorthand for emitting into the room
@@ -66,16 +66,24 @@ io.on('connection', function (socket) {
 
     //handles game updates
     socket.on('fen', function (msg) {
+
+
+
         //if user is a registerd one
-        if(socket.id == room.users.white || socket.id == room.users.white ){
-          roomio.emit('fen', msg);
-        } else {
-          socket.to(socket.id).emit('error', 'not a registered player')
+        if (room.users.white && room.users.black) {// sennò crasha in quanto non esistono gli attributi socketId
+
+            if (socket.id == room.users.white.socketId || socket.id == room.users.black.socketId) { //ho aggiunto .socketId perchè è l'attributo dell'oggetto che ci interessa
+                roomio.emit('fen', msg);
+                console.log("never enter");
+            } else {
+                console.log("enter always here");
+                socket.to(socket.id).emit('error', 'not a registered player')
+            }
         }
     });
 
     //handles disconnection
-    socket.on('disconnect', function() {
+    socket.on('disconnect', function () {
         room.setDisconnected(socket.id);
         console.log('user disconnected');
         socket.to(gameRoomId).emit('users', room.userStatuses());
@@ -85,28 +93,28 @@ io.on('connection', function (socket) {
     socket.on('registerAs', function (color, secret) {
         //if there's already a registered and connected user
         var existingUser = room.users[color];
-        if(existingUser && existingUser.connected){
+        if (existingUser && existingUser.connected) {
             return io.to(socket.id).emit("error", "specified user is already connected");
         }
 
         //if the position is free or user is disconnected
         //register the user
         var user = room.register(color, socket.id, secret); //idempotent
-        if(!user){ //wrong secret?
-          return io.to(socket.id).emit("error", "registration failed");
+        if (!user) { //wrong secret?
+            return io.to(socket.id).emit("error", "registration failed");
         }
         //tell the user he's been approved
-        io.to(socket.id).emit("approved", {color:color, room: gameRoomId, secret: user.secret});
+        io.to(socket.id).emit("approved", {color: color, room: gameRoomId, secret: user.secret});
 
         //emit the new player list to everyone in the room
         roomio.emit('users', room.userStatuses());
 
-        console.log('player registerd', {color:color, room: gameRoomId, secret: user.secret})
+        console.log('player registerd', {color: color, room: gameRoomId, secret: user.secret})
     });
 
 
-    socket.on('error', function(error){
-      console.error('error on socket.io server:', error);
+    socket.on('error', function (error) {
+        console.error('error on socket.io server:', error);
     });
 
 });//io connection

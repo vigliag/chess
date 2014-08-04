@@ -5,7 +5,7 @@ var roomId = 123;
 var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect timeout': 400});//nn ho capito questa parte
 var mystato;
 var color;
-var players= {};
+var players = {};
 /*
  $('#chat').on('submit', function () {
 
@@ -81,12 +81,6 @@ var players= {};
  */
 
 
-
-socket.on('users', function (status) {
-   console.log("stato:", status);
-});
-
-
 socket.on('stato', function (stato) {
     mystato = stato;
 });
@@ -110,18 +104,11 @@ socket.on('fen', function (fen) {
 
 socket.on('users', function (users, room) {
     console.log('users', users);
-    console.log("starts");
-    myusers = users;
-    /*
-    if (users['white'] == myid) {
-        board.orientation('white');
-        color = "white";
-        socket.emit("refresh", room);
-    } else if(users['black'] == myid) {
-        board.orientation('black');
-        color = "black";
+    if (users.white && users.black) {
+        console.log("starts");
+        if (color == "white")
+            cfg.draggable = true;
     }
-    */
 });
 
 
@@ -154,7 +141,6 @@ socket.on('approved', function (msg) {
 
 
 /********************/
-
 
 
 var board,
@@ -231,6 +217,7 @@ var updateStatus = function () {
     }
     if (socket) {
         socket.emit('fen', game.fen());
+        console.log("fen emitted");
     }
 
 };
