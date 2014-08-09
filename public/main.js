@@ -1,3 +1,5 @@
+/*global Chess, ChessBoard, $ */
+
 var sessione;
 var dati = new Array();
 //NOTE: roomId is global
@@ -6,98 +8,31 @@ var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect t
 var mystato;
 var color;
 var players = {};
-/*
- $('#chat').on('submit', function () {
 
- dati[0] = $('#user').val();
- dati[1] = $('#m').val();
- socket.emit('chatmessage', dati, sessione);
- $('#m').val('');
- return false;
- });
- var myid = localStorage.getItem('ID');
- var myusers;
+//GUI
+var $enterWhite = $('#enterWhite');
+var $enterBlack = $('#enterBlack');
 
+$enterWhite.on('click', function(){
+    console.log('sending registration request as white');
+    registra('white');
+});
 
-
- socket.on('connect', function () {
- socket.emit("lista");
-
- });
-
-
- socket.on('stanze', function (stanzelist) {
- var string = "";
- for (i = 0; i < stanzelist.length; i++) {
- string += "<li>" + stanzelist[i] + "</li><button onclick='entra(" + stanzelist[i] + ")'>Entra</button>";
-
- }
- $("#stanze").html(string).trigger('create');
-
- });
-
-
- socket.on('id', function (id) {
- if (!myid) {
- myid = id;
- localStorage.setItem('ID', id);
- } else {
- socket.emit("settaid", myid);
-
- }
- });
-
- socket.on('chatmessage', function (msg) {
- $('#messages').append('<li><h3>' + msg[0] + ':</h3>' + msg[1] + '</li>');
- });
-
- function crea() {
-
- socket.emit("create");
- document.getElementById("creazione").style.display = "none";
- }
-
- function entra(room) {
- socket.emit("subscribe", room);
- wait(room);
- }
-
- function join() {
- room = document.getElementById("entra").value;
- socket.emit("subscribe", room);
- wait(room);
- }
-
- function continua(room) {
- if (mystato != "errore") {
- sessione = room;
- document.getElementById("gestione").style.display = "none";
- document.getElementById("board").style.display = "block";
- document.getElementById("dx").style.display = "block";
- }
- }
-
-
- */
-
-
-socket.on('stato', function (stato) {
-    mystato = stato;
+$enterBlack.on('click', function(){
+    console.log('sending registration request as black');
+    registra('black');
 });
 
 
-socket.on('room', function (room) {
-    socket.emit("lista");
-});
 
-
+//status updates
 socket.on('fen', function (fen) {
+    console.log("fen", fen);
     game.load(fen);
     board.position(game.fen());
     if ((game.turn() == "w" && color == "black") || (game.turn() == "b" && color == "white")) {
         cfg.draggable = false;
     } else {
-
         cfg.draggable = true;
     }
 });
@@ -135,8 +70,6 @@ socket.on('approved', function (msg) {
     } else {
         board.orientation('black');
     }
-
-
 });
 
 
@@ -145,7 +78,7 @@ socket.on('approved', function (msg) {
 
 var board,
     game = new Chess(),
-    statusEl = $('#status'),
+    $statusEl = $('#status'),
     fenEl = $('#fen'),
     pgnEl = $('#pgn');
 
@@ -181,7 +114,6 @@ var onSnapEnd = function () {
     if ((game.turn() == "w" && color == "black") || (game.turn() == "b" && color == "white")) {
         cfg.draggable = false;
     } else {
-
         cfg.draggable = true;
     }
 
@@ -191,11 +123,8 @@ var onSnapEnd = function () {
 var updateStatus = function () {
     var status = '';
 
-    var moveColor = 'White';
-    if (game.turn() === 'b') {
-        moveColor = 'Black';
-    }
-
+    var moveColor = game.turn() === 'b' ? 'Black' : 'White';
+    
     // checkmate?
     if (game.in_checkmate() === true) {
         status = 'Game over, ' + moveColor + ' is in checkmate.';
@@ -215,6 +144,9 @@ var updateStatus = function () {
             status += ', ' + moveColor + ' is in check';
         }
     }
+    
+    $statusEl.html(status);
+    
     if (socket) {
         socket.emit('fen', game.fen());
         console.log("fen emitted");

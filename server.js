@@ -22,8 +22,9 @@ app.get('/chess/:id', function (req, res) {
         room = rooms[id] = new Room();
         console.log('new room created with id ' + id);
     }
+    console.log(room);
     res.render('room', {roomid: id, room: room, white: false, black: false});
-})
+});
 
 //starts the server and socket.io
 var server = http.createServer(app).listen(3000);
@@ -56,28 +57,25 @@ io.on('connection', function (socket) {
         return;
     }
 
-    //shorthand for emitting into the room
-    var roomio = socket.to(gameRoomId);
-
     //handles chat
     socket.on('chatmessage', function (msg) {
-        roomio.emit('chatmessage', msg);
+        socket.to(gameRoomId).emit('chatmessage', msg);
     });
 
     //handles game updates
     socket.on('fen', function (msg) {
-
-
+        console.log('fen ', msg, ' from ', socket.id);
+        console.log(room.users);
 
         //if user is a registerd one
         if (room.users.white && room.users.black) {// sennò crasha in quanto non esistono gli attributi socketId
 
             if (socket.id == room.users.white.socketId || socket.id == room.users.black.socketId) { //ho aggiunto .socketId perchè è l'attributo dell'oggetto che ci interessa
-                roomio.emit('fen', msg);
-                console.log("never enter");
+                io.to(gameRoomId).emit('fen', msg);
+                io.log("never enter");
             } else {
                 console.log("enter always here");
-                socket.to(socket.id).emit('error', 'not a registered player')
+                io.to(socket.id).emit('error', 'not a registered player');
             }
         }
     });
@@ -86,7 +84,7 @@ io.on('connection', function (socket) {
     socket.on('disconnect', function () {
         room.setDisconnected(socket.id);
         console.log('user disconnected');
-        socket.to(gameRoomId).emit('users', room.userStatuses());
+        io.to(gameRoomId).emit('users', room.userStatuses());
     });
 
     //registers a user as a player
@@ -94,22 +92,27 @@ io.on('connection', function (socket) {
         //if there's already a registered and connected user
         var existingUser = room.users[color];
         if (existingUser && existingUser.connected) {
-            return io.to(socket.id).emit("error", "specified user is already connected");
+            io.to(socket.id).emit("error", "specified user is already connected");
+            io.to(gameRoomId).emit('users', room.userStatuses());
+            return ;
         }
 
         //if the position is free or user is disconnected
         //register the user
         var user = room.register(color, socket.id, secret); //idempotent
         if (!user) { //wrong secret?
-            return io.to(socket.id).emit("error", "registration failed");
+            io.to(socket.id).emit("error", "registration failed");
+            io.to(gameRoomId).emit('users', room.userStatuses());
+            return;
         }
+        
         //tell the user he's been approved
         io.to(socket.id).emit("approved", {color: color, room: gameRoomId, secret: user.secret});
 
         //emit the new player list to everyone in the room
-        roomio.emit('users', room.userStatuses());
+        io.to(gameRoomId).emit('users', room.userStatuses());
 
-        console.log('player registerd', {color: color, room: gameRoomId, secret: user.secret})
+        console.log('player registered', {color: color, room: gameRoomId, secret: user.secret});
     });
 
 

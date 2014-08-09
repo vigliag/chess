@@ -28,17 +28,17 @@ Room.prototype.register = function (color, socketId, secret) {
 
     //registration failed
     return false;
-}
+};
 
 Room.prototype.setDisconnected = function(socketId){
     for(var color in this.users){
-        if(this.users[color].socketId == socketId){
+        if(this.users[color] && this.users[color].socketId == socketId){
             this.users[color].connected = false;
             return true;
         }
     }
     return false;
-}
+};
 
 //returns an object with {color: connected}
 Room.prototype.userStatuses = function(){

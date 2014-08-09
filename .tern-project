@@ -1,0 +1,10 @@
+{
+  "libs": [
+    "chai",
+    "reserved",
+    "ecma5"
+  ],
+   "plugins": {
+    "node": {}
+  }
+}

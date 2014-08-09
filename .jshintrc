@@ -1,0 +1,14 @@
+{
+  "node": true,
+  "devel": true,
+  "quotmark" : false,
+    "globals"   : {
+    /* MOCHA */
+    "describe"   : false,
+    "it"         : false,
+    "before"     : false,
+    "beforeEach" : false,
+    "after"      : false,
+    "afterEach"  : false
+  }
+}
