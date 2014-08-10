@@ -23,7 +23,7 @@ app.get('/chess/:id', function (req, res) {
         console.log('new room created with id ' + id);
     }
     console.log(room);
-    res.render('room', {roomid: id, room: room, white: false, black: false});
+    res.render('room', {roomId: id, room: room});
 });
 
 //starts the server and socket.io
@@ -68,13 +68,12 @@ io.on('connection', function (socket) {
         console.log(room.users);
 
         //if user is a registerd one
-        if (room.users.white && room.users.black) {// sennò crasha in quanto non esistono gli attributi socketId
-
-            if (socket.id == room.users.white.socketId || socket.id == room.users.black.socketId) { //ho aggiunto .socketId perchè è l'attributo dell'oggetto che ci interessa
+        if (room.users.w && room.users.b) {
+            if (socket.id == room.users.w.socketId || socket.id == room.users.b.socketId) {
                 io.to(gameRoomId).emit('fen', msg);
-                io.log("never enter");
+                console.log("received fen from registered player");
             } else {
-                console.log("enter always here");
+                console.log("error, fen from a non-registered player");
                 io.to(socket.id).emit('error', 'not a registered player');
             }
         }

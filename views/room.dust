@@ -23,7 +23,7 @@
     <!-- Custom styles for this template -->
     <link href="/css/style.css" rel="stylesheet">
     <script>
-        var roomid = {roomid};
+        var roomId = {roomId};
     </script>
 </head>
 
@@ -55,8 +55,8 @@
 
     <div class="starter-template">
         <h1>Chess</h1>
-        <button type="button" id="enterWhite" class="btn btn-default" {?white}disabled="disabled"{/white}>Bianco</button>
-        <button type="button" id="enterBlack" class="btn btn-default" {?black}disabled="disabled"{/black}>Nero</button>
+        <button type="button" id="enterWhite" class="btn btn-default">Bianco</button>
+        <button type="button" id="enterBlack" class="btn btn-default">Nero</button>
         <div id="status"></div>
     </div>
 

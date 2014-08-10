@@ -1,71 +1,65 @@
-/*global Chess, ChessBoard, $ */
+/*global Chess, ChessBoard, $, io, roomId */
 
-var sessione;
-var dati = new Array();
 //NOTE: roomId is global
-var roomId = 123;
 var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect timeout': 400});//nn ho capito questa parte
-var mystato;
-var color;
-var players = {};
+var playerColor;
+var game = new Chess();
+
+function sendMove(){
+    if (socket) {
+        socket.emit('fen', game.fen());
+        console.log("fen emitted");
+    }
+}
 
 //GUI
+var board =  new ChessBoard('board', {
+    draggable: true,
+    position: 'start',
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onSnapEnd: onSnapEnd
+});
+
+var $statusEl = $('#status');
 var $enterWhite = $('#enterWhite');
 var $enterBlack = $('#enterBlack');
 
+function registra(playerColor) {
+    socket.emit("registerAs", playerColor, 123);
+}
+
 $enterWhite.on('click', function(){
     console.log('sending registration request as white');
-    registra('white');
+    registra('w');
 });
 
 $enterBlack.on('click', function(){
     console.log('sending registration request as black');
-    registra('black');
+    registra('b');
 });
-
 
 
 //status updates
 socket.on('fen', function (fen) {
-    console.log("fen", fen);
+    console.log("received fen", fen);
     game.load(fen);
     board.position(game.fen());
-    if ((game.turn() == "w" && color == "black") || (game.turn() == "b" && color == "white")) {
-        cfg.draggable = false;
-    } else {
-        cfg.draggable = true;
-    }
+    updateGui();
 });
 
 socket.on('users', function (users, room) {
     console.log('users', users);
-    if (users.white && users.black) {
+    if (users.w && users.b) {
         console.log("starts");
-        if (color == "white")
-            cfg.draggable = true;
     }
 });
 
-
-/*********Nuove Funzioni************/
-
-/*STEP:
- 1) va sulla pagina
- 2) clicca su w/b e si "registra"
- 3)socket manda approvazione
- 4)on approved gira la scacchiera
- */
-
-function registra(color) {
-    socket.emit("registerAs", color, 123);
-}
-
-
 socket.on('approved', function (msg) {
     console.log("Approved:", msg);
-    color = msg.color;
+    playerColor = msg.color;
 
-    if (color == 'white') {
+    if (playerColor == 'w') {
         board.orientation('white');
     } else {
         board.orientation('black');
@@ -73,69 +67,22 @@ socket.on('approved', function (msg) {
 });
 
 
-/********************/
+/********************
+* Player GUI
+*********************/
 
-
-var board,
-    game = new Chess(),
-    $statusEl = $('#status'),
-    fenEl = $('#fen'),
-    pgnEl = $('#pgn');
-
-// do not pick up pieces if the game is over
-// only pick up pieces for the side to move
-var onDragStart = function (source, piece, position, orientation) {
-    if (game.game_over() === true ||
-        (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
-        return false;
-    }
-};
-
-var onDrop = function (source, target) {
-    // see if the move is legal
-    var move = game.move({
-        from: source,
-        to: target,
-        promotion: 'q' // NOTE: always promote to a queen for example simplicity
-    });
-
-    // illegal move
-    if (move === null) return 'snapback';
-
-    updateStatus();
-};
-
-// update the board position after the piece snap 
-// for castling, en passant, pawn promotion
-var onSnapEnd = function () {
-
-
-    if ((game.turn() == "w" && color == "black") || (game.turn() == "b" && color == "white")) {
-        cfg.draggable = false;
-    } else {
-        cfg.draggable = true;
-    }
-
-    board.position(game.fen());
-};
-
-var updateStatus = function () {
-    var status = '';
-
+function updateGui(){
+    var status;
     var moveColor = game.turn() === 'b' ? 'Black' : 'White';
-    
-    // checkmate?
+
     if (game.in_checkmate() === true) {
         status = 'Game over, ' + moveColor + ' is in checkmate.';
     }
 
-    // draw?
     else if (game.in_draw() === true) {
         status = 'Game over, drawn position';
     }
 
-    // game still on
     else {
         status = moveColor + ' to move';
 
@@ -146,24 +93,43 @@ var updateStatus = function () {
     }
     
     $statusEl.html(status);
-    
-    if (socket) {
-        socket.emit('fen', game.fen());
-        console.log("fen emitted");
+}
+
+function onDragStart(source, piece, position, orientation) {
+    //prevents dragging if one of the following conditions holds true
+    if ( game.turn() !== playerColor ||
+         game.game_over() === true ||
+        (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+        (game.turn() === 'b' && piece.search(/^w/) !== -1)) 
+    {
+        return false;
     }
+}
 
-};
+function onDrop(source, target) {
+    // see if the move is legal
+    var move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q' // NOTE: always promote to a queen for example simplicity
+    });
+    
+    console.log(move);
+    
+    // illegal move
+    if (move === null) return 'snapback';
+    
+    updateGui();
+    sendMove();
+}
 
-var cfg = {
-    draggable: false,
-    position: 'start',
-    onDragStart: onDragStart,
-    onDrop: onDrop,
-    onSnapEnd: onSnapEnd
-};
-board = new ChessBoard('board', cfg);
+// update the board position after the piece snap 
+// for castling, en passant, pawn promotion
+function onSnapEnd() {
+    board.position(game.fen());
+}
 
-updateStatus();
+updateGui();
 
 
 
