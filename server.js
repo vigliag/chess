@@ -2,7 +2,9 @@ var express = require('express');
 var http = require('http');
 
 var dustjs = require('adaro');
+var Chess = require('./public/vendor/js/chess.js').Chess;
 var Room = require('./Room');
+var Comm = require('./Comm');
 
 //express set-up
 var app = express();
@@ -19,7 +21,8 @@ app.get('/chess/:id', function (req, res) {
     var id = req.param("id");
     var room = rooms[id];
     if (!room) {
-        room = rooms[id] = new Room();
+        var game = new Chess();
+        room = rooms[id] = new Room(game);
         console.log('new room created with id ' + id);
     }
     console.log(room);
@@ -32,14 +35,21 @@ console.log("listening on port 3000");
 var io = require('socket.io')(server);
 
 //listens for connections
-io.on('connection', function (socket) {
+io.on('connection', acceptClientIntoRoom);
+
+function acceptClientIntoRoom(socket) {
+    
+    function clientError(errorMsg){ //TODO REFACTOR OUT
+        io.to(socket.id).emit('error', errorMsg);
+        console.log('error to client' + errorMsg);
+    }
+    
     console.log('client connected to url ' + socket.request.url);
 
     //obtains the room for the request url
     var urlMatches = /gameRoom=(\w+)/.exec(socket.request.url);
     if (!urlMatches) {
-        console.log("unspecified room");
-        socket.emit('error', 'unspecified room');
+        clientError('unspecified room');
         return;
     }
     var gameRoomId = urlMatches[1];
@@ -52,71 +62,74 @@ io.on('connection', function (socket) {
     //grabs a reference to the room (it must already exist)
     var room = rooms[gameRoomId];
     if (!room) {
-        console.log("room doesn't exist");
-        //io.to(socket.id).emit('error', "room doesn't exist");
+        clientError("room doesn't exist");
         return;
     }
+    
+    //TODO: CREATE COMM OBJECT HERE AND PASS IT TO THE ROOM INSTEAD OF SOCKET AND GAMEROOMID
+    var comm = new Comm(io, socket, gameRoomId);
 
-    //handles chat
     socket.on('chatmessage', function (msg) {
         socket.to(gameRoomId).emit('chatmessage', msg);
     });
+    
+    startServingClient(comm, room, socket.id, gameRoomId);
+}
 
+
+function startServingClient(comm, room, socketId, gameRoomId){
+
+    var game = room.game;
+    var playerRole;
+    var broadcastPublicGameState = function(){
+        comm.broadcastPublicGameState(game.fen());
+    };
+    
+    var broadcastUserList = function(){
+        comm.broadcastUserList(room.userStatuses() );
+    };
+    
+    broadcastPublicGameState();
+    broadcastUserList();
+    
     //handles game updates
-    socket.on('fen', function (msg) {
-        console.log('fen ', msg, ' from ', socket.id);
-        console.log(room.users);
+    comm.on('playerMove', function (msg) {
+        console.log('playerMove ', msg, ' from ', socketId, "with ", room.users);
 
-        //if user is a registerd one
-        if (room.users.w && room.users.b) {
-            if (socket.id == room.users.w.socketId || socket.id == room.users.b.socketId) {
-                io.to(gameRoomId).emit('fen', msg);
-                console.log("received fen from registered player");
-            } else {
-                console.log("error, fen from a non-registered player");
-                io.to(socket.id).emit('error', 'not a registered player');
+        if(game.turn() === playerRole){
+            var moveWasApplied = game.move(msg) !== null;
+            if(!moveWasApplied){
+                comm.clientError("invalid move " + msg);
             }
+        } else {
+            console.log("unexpected player move");
+            comm.clientError('error, unexpected player move');
         }
+        broadcastPublicGameState();
     });
 
     //handles disconnection
-    socket.on('disconnect', function () {
-        room.setDisconnected(socket.id);
+    comm.on('disconnect', function () {
+        room.setDisconnected(socketId);
         console.log('user disconnected');
-        io.to(gameRoomId).emit('users', room.userStatuses());
+        broadcastUserList();
     });
 
     //registers a user as a player
-    socket.on('registerAs', function (color, secret) {
-        //if there's already a registered and connected user
-        var existingUser = room.users[color];
-        if (existingUser && existingUser.connected) {
-            io.to(socket.id).emit("error", "specified user is already connected");
-            io.to(gameRoomId).emit('users', room.userStatuses());
-            return ;
-        }
-
-        //if the position is free or user is disconnected
-        //register the user
-        var user = room.register(color, socket.id, secret); //idempotent
+    comm.on('registerAs', function (role, secret) {
+        console.log('registerAs received', role, secret);
+        var user = room.register(role, socketId, secret); //idempotent
         if (!user) { //wrong secret?
-            io.to(socket.id).emit("error", "registration failed");
-            io.to(gameRoomId).emit('users', room.userStatuses());
+            comm.clientError("registration failed");
+            broadcastUserList();
             return;
         }
         
-        //tell the user he's been approved
-        io.to(socket.id).emit("approved", {color: color, room: gameRoomId, secret: user.secret});
-
-        //emit the new player list to everyone in the room
-        io.to(gameRoomId).emit('users', room.userStatuses());
-
-        console.log('player registered', {color: color, room: gameRoomId, secret: user.secret});
+        playerRole = role;
+        
+        comm.sendUserApproved({color: role, room: gameRoomId, secret: user.secret});
+        broadcastUserList();
+        console.log('player registered', {color: role, room: gameRoomId, secret: user.secret});
     });
 
-
-    socket.on('error', function (error) {
-        console.error('error on socket.io server:', error);
-    });
-
-});//io connection
+}

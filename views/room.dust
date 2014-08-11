@@ -55,8 +55,9 @@
 
     <div class="starter-template">
         <h1>Chess</h1>
-        <button type="button" id="enterWhite" class="btn btn-default">Bianco</button>
-        <button type="button" id="enterBlack" class="btn btn-default">Nero</button>
+        <div id="playerStatuses">
+
+        </div>
         <div id="status"></div>
     </div>
 

@@ -7,8 +7,10 @@ var game = new Chess();
 
 function sendMove(){
     if (socket) {
-        socket.emit('fen', game.fen());
-        console.log("fen emitted");
+        var gameHistory = game.history();
+        var lastmove = gameHistory[gameHistory.length -1];
+        socket.emit('playerMove', lastmove);
+        console.log("playerMove emitted");
     }
 }
 
@@ -22,26 +24,36 @@ var board =  new ChessBoard('board', {
 });
 
 var $statusEl = $('#status');
-var $enterWhite = $('#enterWhite');
-var $enterBlack = $('#enterBlack');
+
+var $playerStatuses = $('#playerStatuses');
 
 function registra(playerColor) {
     socket.emit("registerAs", playerColor, 123);
+    console.log("sending registration request as " + playerColor);
 }
 
-$enterWhite.on('click', function(){
-    console.log('sending registration request as white');
-    registra('w');
-});
+function updatePlayerStatusesGui(users){
+    var selftxt = playerColor === undefined ? 'spectator' : playerColor;
+    var wtxt = users.w === null ?
+        '<button type="button" id="enterWhite" class="btn btn-default">Join as white</button>':'connected';
+    var btxt = users.b === null ? 
+        '<button type="button" id="enterBlack" class="btn btn-default">Join as black</button>':'connected';
+    $playerStatuses.html('<div id="white">white: ' + wtxt +
+                         '</div><div id="black">black: '+ btxt +
+                         '</div><p>Connected As '+ selftxt+
+                         '</p>');
+    
+    $('#enterWhite').one('click', function(){
+        registra('w');
+    });
 
-$enterBlack.on('click', function(){
-    console.log('sending registration request as black');
-    registra('b');
-});
-
+    $('#enterBlack').one('click', function(){
+        registra('b');
+    });
+}
 
 //status updates
-socket.on('fen', function (fen) {
+socket.on('publicGameState', function (fen) {
     console.log("received fen", fen);
     game.load(fen);
     board.position(game.fen());
@@ -50,9 +62,7 @@ socket.on('fen', function (fen) {
 
 socket.on('users', function (users, room) {
     console.log('users', users);
-    if (users.w && users.b) {
-        console.log("starts");
-    }
+    updatePlayerStatusesGui(users);
 });
 
 socket.on('approved', function (msg) {
@@ -74,24 +84,17 @@ socket.on('approved', function (msg) {
 function updateGui(){
     var status;
     var moveColor = game.turn() === 'b' ? 'Black' : 'White';
-
     if (game.in_checkmate() === true) {
         status = 'Game over, ' + moveColor + ' is in checkmate.';
-    }
-
-    else if (game.in_draw() === true) {
+    } else if (game.in_draw() === true) {
         status = 'Game over, drawn position';
-    }
-
-    else {
+    } else {
         status = moveColor + ' to move';
-
         // check?
         if (game.in_check() === true) {
             status += ', ' + moveColor + ' is in check';
         }
     }
-    
     $statusEl.html(status);
 }
 

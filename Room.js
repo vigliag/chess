@@ -1,4 +1,5 @@
-function Room() {
+function Room(game) {
+    this.game = game;
     this.users = {
         w: null, //{secret:null, socketId: null},
         b: null
