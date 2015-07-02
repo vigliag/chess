@@ -1,9 +1,12 @@
 /*global Chess, ChessBoard, $, io, roomId */
 
 //NOTE: roomId is global
-var socket = io.connect("/?gameRoom=" + roomId, {'connect timeout': 400});//nn ho capito questa parte
-var playerColor;
+var socket = io.connect("/?gameRoom=" + roomId, {'connect timeout': 400});
 var game = new Chess();
+
+var clientState = {
+  localplayers : {} //dictionary name -> true of local players
+};
 
 function sendMove(){
     if (socket) {
@@ -32,15 +35,17 @@ function registra(playerColor) {
     console.log("sending registration request as " + playerColor);
 }
 
-function updatePlayerStatusesGui(users){
-    var selftxt = playerColor === undefined ? 'spectator' : playerColor;
-    var wtxt = users.w === null ?
-        '<button type="button" id="enterWhite" class="btn btn-default">Join as white</button>':'connected';
-    var btxt = users.b === null ?
-        '<button type="button" id="enterBlack" class="btn btn-default">Join as black</button>':'connected';
-    $playerStatuses.html('<div id="white">white: ' + wtxt +
-                         '</div><div id="black">black: '+ btxt +
-                         '</div><p>Connected As '+ selftxt+
+function updatePlayerStatusesGui(receivedUserInfo){
+    var user = receivedUserInfo;
+    var isSpectator = Object.keys(clientState.localplayers).length === 0;
+
+    var playerText = isSpectator === true ? 'Spectator' :  Object.keys(clientState.localplayers).join(" ");
+    var wbutton = '<button type="button" id="enterWhite" class="btn btn-default">Join as white</button>';
+    var bbutton = '<button type="button" id="enterBlack" class="btn btn-default">Join as black</button>';
+
+    $playerStatuses.html('<div id="white">white: ' + (user.w === null ? wbutton : "connected") +
+                         '</div><div id="black">black: '+  (user.b === null ? bbutton : "connected") +
+                         '</div><p>Connected As '+ playerText +
                          '</p>');
 
     $('#enterWhite').one('click', function(){
@@ -67,9 +72,9 @@ socket.on('users', function (users, room) {
 
 socket.on('approved', function (msg) {
     console.log("Approved:", msg);
-    playerColor = msg.color;
+    clientState.localplayers[msg.color] = true;
 
-    if (playerColor == 'w') {
+    if ( msg.color == 'w') {
         board.orientation('white');
     } else {
         board.orientation('black');
@@ -100,10 +105,10 @@ function updateGui(){
 
 function onDragStart(source, piece, position, orientation) {
     //prevents dragging if one of the following conditions holds true
-    if ( game.turn() !== playerColor ||
+    if ( !(game.turn() in clientState.localplayers) ||
          game.game_over() === true ||
         (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1))
+        (game.turn() === 'b' && piece.search(/^w/) !== -1)  )
     {
         return false;
     }

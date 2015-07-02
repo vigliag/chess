@@ -86,7 +86,7 @@ function acceptClientIntoRoom(socket) {
 function startServingClient(comm, room, socketId, gameRoomId){
 
     var game = room.game;
-    var playerRole;
+    var clientRoles = {}; //role -> true
     var broadcastPublicGameState = function(){
         comm.broadcastPublicGameState(game.fen());
     };
@@ -102,7 +102,7 @@ function startServingClient(comm, room, socketId, gameRoomId){
     comm.on('playerMove', function (msg) {
         console.log('playerMove ', msg, ' from ', socketId, "with ", room.users);
 
-        if(game.turn() === playerRole){
+        if(game.turn() in clientRoles){
             var moveWasApplied = game.move(msg) !== null;
             if(!moveWasApplied){
                 comm.clientError("invalid move " + msg);
@@ -131,7 +131,7 @@ function startServingClient(comm, room, socketId, gameRoomId){
             return;
         }
 
-        playerRole = role;
+        clientRoles[role] = true;
 
         comm.sendUserApproved({color: role, room: gameRoomId, secret: user.secret});
         broadcastUserList();
