@@ -2,6 +2,7 @@ var express = require('express');
 var http = require('http');
 
 var dustjs = require('adaro');
+
 var Chess = require('./public/vendor/js/chess.js').Chess;
 var Room = require('./Room');
 var Comm = require('./Comm');
@@ -14,6 +15,11 @@ app.use(express.static(__dirname + '/public'));
 
 //global room dictionary
 var rooms = {};
+
+app.get('/', function(req,res){
+  var randomRoom = Math.floor(Math.random() * (200 - 100)) + 100;
+  res.redirect("/chess/" + randomRoom );
+});
 
 //route that displays a game room with a given id.
 //If the room doesn't exist, a new room is created and assigned to the id;
@@ -38,12 +44,12 @@ var io = require('socket.io')(server);
 io.on('connection', acceptClientIntoRoom);
 
 function acceptClientIntoRoom(socket) {
-    
+
     function clientError(errorMsg){ //TODO REFACTOR OUT
         io.to(socket.id).emit('error', errorMsg);
         console.log('error to client' + errorMsg);
     }
-    
+
     console.log('client connected to url ' + socket.request.url);
 
     //obtains the room for the request url
@@ -65,14 +71,14 @@ function acceptClientIntoRoom(socket) {
         clientError("room doesn't exist");
         return;
     }
-    
+
     //TODO: CREATE COMM OBJECT HERE AND PASS IT TO THE ROOM INSTEAD OF SOCKET AND GAMEROOMID
     var comm = new Comm(io, socket, gameRoomId);
 
     socket.on('chatmessage', function (msg) {
         socket.to(gameRoomId).emit('chatmessage', msg);
     });
-    
+
     startServingClient(comm, room, socket.id, gameRoomId);
 }
 
@@ -84,14 +90,14 @@ function startServingClient(comm, room, socketId, gameRoomId){
     var broadcastPublicGameState = function(){
         comm.broadcastPublicGameState(game.fen());
     };
-    
+
     var broadcastUserList = function(){
         comm.broadcastUserList(room.userStatuses() );
     };
-    
+
     broadcastPublicGameState();
     broadcastUserList();
-    
+
     //handles game updates
     comm.on('playerMove', function (msg) {
         console.log('playerMove ', msg, ' from ', socketId, "with ", room.users);
@@ -124,9 +130,9 @@ function startServingClient(comm, room, socketId, gameRoomId){
             broadcastUserList();
             return;
         }
-        
+
         playerRole = role;
-        
+
         comm.sendUserApproved({color: role, room: gameRoomId, secret: user.secret});
         broadcastUserList();
         console.log('player registered', {color: role, room: gameRoomId, secret: user.secret});

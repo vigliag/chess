@@ -8,7 +8,7 @@
     <meta name="author" content="">
 
 <!-- scripts-->
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="/vendor/js/chess.js"></script>
     <script src="/vendor/js/chessboard-0.3.0.js"></script>

@@ -1,7 +1,7 @@
 /*global Chess, ChessBoard, $, io, roomId */
 
 //NOTE: roomId is global
-var socket = io.connect("http://localhost:3000/?gameRoom=" + roomId, {'connect timeout': 400});//nn ho capito questa parte
+var socket = io.connect("/?gameRoom=" + roomId, {'connect timeout': 400});//nn ho capito questa parte
 var playerColor;
 var game = new Chess();
 
@@ -36,13 +36,13 @@ function updatePlayerStatusesGui(users){
     var selftxt = playerColor === undefined ? 'spectator' : playerColor;
     var wtxt = users.w === null ?
         '<button type="button" id="enterWhite" class="btn btn-default">Join as white</button>':'connected';
-    var btxt = users.b === null ? 
+    var btxt = users.b === null ?
         '<button type="button" id="enterBlack" class="btn btn-default">Join as black</button>':'connected';
     $playerStatuses.html('<div id="white">white: ' + wtxt +
                          '</div><div id="black">black: '+ btxt +
                          '</div><p>Connected As '+ selftxt+
                          '</p>');
-    
+
     $('#enterWhite').one('click', function(){
         registra('w');
     });
@@ -103,7 +103,7 @@ function onDragStart(source, piece, position, orientation) {
     if ( game.turn() !== playerColor ||
          game.game_over() === true ||
         (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1)) 
+        (game.turn() === 'b' && piece.search(/^w/) !== -1))
     {
         return false;
     }
@@ -116,24 +116,20 @@ function onDrop(source, target) {
         to: target,
         promotion: 'q' // NOTE: always promote to a queen for example simplicity
     });
-    
+
     console.log(move);
-    
+
     // illegal move
     if (move === null) return 'snapback';
-    
+
     updateGui();
     sendMove();
 }
 
-// update the board position after the piece snap 
+// update the board position after the piece snap
 // for castling, en passant, pawn promotion
 function onSnapEnd() {
     board.position(game.fen());
 }
 
 updateGui();
-
-
-
-
