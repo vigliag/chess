@@ -1,9 +1,10 @@
 {
   "node": true,
   "devel": true,
+  "undef": true,
+  "unused": true,
   "quotmark" : false,
     "globals"   : {
-    /* MOCHA */
     "describe"   : false,
     "it"         : false,
     "before"     : false,

@@ -7,15 +7,14 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-<!-- scripts-->
     <script src="/socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="/vendor/js/chess.js"></script>
     <script src="/vendor/js/chessboard-0.3.0.js"></script>
-  <!-- scripts-->
+
     <link rel="stylesheet" href="/vendor/css/chessboard-0.3.0.css" />
 
-    <title>G&G Chess</title>
+    <title>Chess Room</title>
 
     <!-- Bootstrap core CSS -->
     <link href="/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">

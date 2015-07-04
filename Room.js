@@ -1,55 +1,44 @@
 function Room(game) {
     this.game = game;
-    this.users = {
-        w: null, //{secret:null, socketId: null},
+    this.roles = {
+        w: null,
         b: null
     };
 }
 
-Room.prototype.register = function (color, socketId, secret) {
-	var existingUser = this.users[color];
-
-    if (!existingUser){
-        var newUser = this.users[color] = {
-            secret : secret,
-            socketId : socketId,
-            connected : true
-        };
-        return newUser;
-    }
-
-    //user already exists
-	//check if a secret has been sent and it is correct for the existing user
-    if(secret && existingUser.secret == secret){
-    	//update user connection infos
-        existingUser.connected = true;
-        existingUser.socketId = socketId;
-        return existingUser;
-    }
-
-    //registration failed
-    return false;
+Room.prototype.getUserWithRole = function(role){
+  return this.roles[role];
 };
 
-Room.prototype.setDisconnected = function(socketId){
-    for(var color in this.users){
-        if(this.users[color] && this.users[color].socketId == socketId){
-            this.users[color].connected = false;
-            return true;
+Room.prototype.getRolesForUser = function(userId){
+  var uroles = {};
+
+  for(var i in this.roles){
+    if (this.roles[i] == userId) {
+      uroles[i] = true;
+    }
+  }
+
+  return uroles;
+};
+
+Room.prototype.setUserRole = function(userId, role){
+  this.roles[role] = userId;
+};
+
+Room.prototype.setDisconnected = function(userId){
+    for(var role in this.roles){
+        if(this.users[role].userId == userId){
+            this.users[role] = null;
         }
     }
-    return false;
 };
 
-//returns an object with {color: connected}
+//returns an object with {role: connected}
 Room.prototype.userStatuses = function(){
   var response = {};
-  for(var color in this.users){
-    if(!this.users[color]){
-      response[color] = null;
-    } else {
-      response[color] = this.users[color].connected;
-    }
+  for(var role in this.roles){
+      response[role] = this.roles[role] ? true :  null;
   }
   return response;
 };
