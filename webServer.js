@@ -5,7 +5,7 @@ var dustjs = require('adaro');
 
 var Chess = require('./public/vendor/js/chess.js').Chess;
 var gameRoom = require('./gameServer.js');
-var db = require('./db');
+var db = require('./db.js');
 
 //express set-up
 var app = express();

@@ -30,9 +30,9 @@ var $statusEl = $('#status');
 
 var $playerStatuses = $('#playerStatuses');
 
-function registra(playerColor) {
+function sendRoleRequest(playerColor) {
     socket.emit("registerAs", playerColor, 123);
-    console.log("sending registration request as " + playerColor);
+    console.log("sending sendRoleRequest as " + playerColor);
 }
 
 function updatePlayerStatusesGui(receivedUserInfo){
@@ -49,11 +49,11 @@ function updatePlayerStatusesGui(receivedUserInfo){
                          '</p>');
 
     $('#enterWhite').one('click', function(){
-        registra('w');
+        sendRoleRequest('w');
     });
 
     $('#enterBlack').one('click', function(){
-        registra('b');
+        sendRoleRequest('b');
     });
 }
 
@@ -116,16 +116,16 @@ function onDragStart(source, piece, position, orientation) {
 
 function onDrop(source, target) {
     // see if the move is legal
-    var move = game.move({
+    var executed_move = game.move({
         from: source,
         to: target,
         promotion: 'q' // NOTE: always promote to a queen for example simplicity
     });
 
-    console.log(move);
+    console.log('issued move ' + executed_move);
 
     // illegal move
-    if (move === null) return 'snapback';
+    if (executed_move === null) return 'snapback';
 
     updateGui();
     sendMove();

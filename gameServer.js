@@ -84,15 +84,15 @@ function startServingClient(room, clientSocket, roomSocket){
 
     //handles disconnection
     clientSocket.on('disconnect', function () {
-        room.setDisconnected(clientSocket.socketId);
-        console.log('user disconnected');
+        room.setDisconnected(playerId);
+        console.log('user ' + playerId + ' disconnected');
         broadcastUserList();
     });
 
     //registers a user as a player
     clientSocket.on('registerAs', function (role, secret) {
         console.log('registerAs received', role, secret);
-        room.setUserRole(role, playerId);
+        room.setUserRole(playerId, role);
         clientSocket.sendUserApproved({color: role, room: roomSocket.roomId});
         broadcastUserList();
         console.log('player registered', {color: role, room: roomSocket.roomId});

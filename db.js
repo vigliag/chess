@@ -2,7 +2,7 @@ var Room = require('./Room.js');
 
 var room = {};
 
-exports = {
+module.exports = {
 
   getRoom : function(id){
     return room[id];

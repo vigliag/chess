@@ -28,8 +28,8 @@ Room.prototype.setUserRole = function(userId, role){
 
 Room.prototype.setDisconnected = function(userId){
     for(var role in this.roles){
-        if(this.users[role].userId == userId){
-            this.users[role] = null;
+        if(this.roles[role] == userId){
+            this.roles[role] = null;
         }
     }
 };
